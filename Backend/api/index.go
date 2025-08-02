@@ -208,41 +208,56 @@ func setupRouter() *gin.Engine {
 	router.GET("/carts", func(c *gin.Context) {
 		userID := 1 // Simplified
 		
-		// In serverless, in-memory storage is reset between requests
-		// For demo purposes, return sample cart data if no items exist
+		// Check if we have a deletion marker in query params
+		deletedItemId := c.Query("deleted_item_id")
+		
+		// Sample cart data
+		sampleCart := []map[string]interface{}{
+			{
+				"id":         1,
+				"item_id":    1,
+				"quantity":   2,
+				"item": map[string]interface{}{
+					"id": 1, 
+					"name": "Laptop", 
+					"description": "High-performance laptop", 
+					"price": 59999, 
+					"status": "available",
+					"created_at": time.Now().AddDate(0, 0, -30).Format(time.RFC3339),
+				},
+				"created_at": time.Now().AddDate(0, 0, -1).Format(time.RFC3339),
+			},
+			{
+				"id":         2,
+				"item_id":    3,
+				"quantity":   1,
+				"item": map[string]interface{}{
+					"id": 3, 
+					"name": "Headphones", 
+					"description": "Wireless headphones", 
+					"price": 9999, 
+					"status": "available",
+					"created_at": time.Now().AddDate(0, 0, -20).Format(time.RFC3339),
+				},
+				"created_at": time.Now().AddDate(0, 0, -2).Format(time.RFC3339),
+			},
+		}
+		
+		// Filter out deleted item if specified
+		if deletedItemId != "" {
+			filteredCart := []map[string]interface{}{}
+			for _, item := range sampleCart {
+				if strconv.Itoa(int(item["item_id"].(int))) != deletedItemId {
+					filteredCart = append(filteredCart, item)
+				}
+			}
+			sampleCart = filteredCart
+		}
+		
+		// In serverless, try to use actual cart data first, fallback to sample
 		userCart := carts[userID]
 		if userCart == nil || len(userCart) == 0 {
-			// Return sample cart data for demonstration
-			userCart = []map[string]interface{}{
-				{
-					"id":         1,
-					"item_id":    1,
-					"quantity":   2,
-					"item": map[string]interface{}{
-						"id": 1, 
-						"name": "Laptop", 
-						"description": "High-performance laptop", 
-						"price": 59999, 
-						"status": "available",
-						"created_at": time.Now().AddDate(0, 0, -30).Format(time.RFC3339),
-					},
-					"created_at": time.Now().AddDate(0, 0, -1).Format(time.RFC3339),
-				},
-				{
-					"id":         2,
-					"item_id":    3,
-					"quantity":   1,
-					"item": map[string]interface{}{
-						"id": 3, 
-						"name": "Headphones", 
-						"description": "Wireless headphones", 
-						"price": 9999, 
-						"status": "available",
-						"created_at": time.Now().AddDate(0, 0, -20).Format(time.RFC3339),
-					},
-					"created_at": time.Now().AddDate(0, 0, -2).Format(time.RFC3339),
-				},
-			}
+			userCart = sampleCart
 		}
 		
 		// Return cart in expected format

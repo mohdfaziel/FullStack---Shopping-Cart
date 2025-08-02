@@ -13,6 +13,12 @@ const CartModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  // Add function to clear deleted items (for demo reset)
+  const clearDeletedItems = () => {
+    localStorage.removeItem('deletedCartItems');
+    fetchCartData();
+  };
+
   const fetchCartData = async () => {
     setIsLoading(true);
     try {
@@ -35,11 +41,18 @@ const CartModal = ({ isOpen, onClose }) => {
   const processCartItems = () => {
     if (!cartData?.cart_items) return [];
     
-    // Use cart_items directly since they now include quantities
-    return cartData.cart_items.map(cartItem => ({
-      ...cartItem.item,
-      quantity: cartItem.quantity
-    }));
+    // Get deleted items from localStorage
+    const deletedItems = JSON.parse(localStorage.getItem('deletedCartItems') || '[]');
+    
+    // Filter out deleted items and use cart_items directly since they now include quantities
+    return cartData.cart_items
+      .filter(cartItem => !deletedItems.includes(cartItem.item_id))
+      .map(cartItem => ({
+        ...cartItem.item,
+        quantity: cartItem.quantity,
+        cart_item_id: cartItem.id,
+        item_id: cartItem.item_id // Keep item_id for deletion
+      }));
   };
 
   const calculateTotal = () => {
@@ -70,6 +83,14 @@ const CartModal = ({ isOpen, onClose }) => {
     try {
       await cartAPI.removeItem(itemId);
       toast.success('Item removed from cart! 🗑️');
+      
+      // Store deleted items in localStorage for demo persistence
+      const deletedItems = JSON.parse(localStorage.getItem('deletedCartItems') || '[]');
+      if (!deletedItems.includes(itemId)) {
+        deletedItems.push(itemId);
+        localStorage.setItem('deletedCartItems', JSON.stringify(deletedItems));
+      }
+      
       // Refresh cart data
       await fetchCartData();
     } catch (error) {
@@ -136,12 +157,12 @@ const CartModal = ({ isOpen, onClose }) => {
                               </p>
                             </div>
                             <button
-                              onClick={() => handleDeleteItem(item.id)}
-                              disabled={deletingItemId === item.id}
-                              className={`btn btn-error btn-sm ${deletingItemId === item.id ? 'loading' : ''}`}
+                              onClick={() => handleDeleteItem(item.item_id)}
+                              disabled={deletingItemId === item.item_id}
+                              className={`btn btn-error btn-sm ${deletingItemId === item.item_id ? 'loading' : ''}`}
                               title="Remove from cart"
                             >
-                              {deletingItemId === item.id ? 'Removing...' : '🗑️'}
+                              {deletingItemId === item.item_id ? 'Removing...' : '🗑️'}
                             </button>
                           </div>
                         </div>
