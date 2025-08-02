@@ -104,7 +104,7 @@ func setupRouter() *gin.Engine {
 		})
 	})
 
-	// Simple items endpoint
+	// Simple items endpoint - Return array directly (not wrapped in object)
 	router.GET("/items", func(c *gin.Context) {
 		items := []map[string]interface{}{
 			{"id": 1, "name": "Laptop", "description": "High-performance laptop", "price": 59999, "stock": 10},
@@ -116,7 +116,8 @@ func setupRouter() *gin.Engine {
 			{"id": 7, "name": "Tablet", "description": "10-inch tablet", "price": 34999, "stock": 12},
 			{"id": 8, "name": "Webcam", "description": "HD webcam", "price": 4999, "stock": 18},
 		}
-		c.JSON(http.StatusOK, gin.H{"items": items})
+		// Return items array directly (not wrapped in object) to fix frontend map error
+		c.JSON(http.StatusOK, items)
 	})
 
 	// Cart endpoints
