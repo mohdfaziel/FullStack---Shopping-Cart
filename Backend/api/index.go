@@ -3,9 +3,6 @@ package handler
 import (
 	"net/http"
 	"os"
-	"shopping-cart-backend/database"
-	"shopping-cart-backend/handlers"
-	"shopping-cart-backend/middleware"
 	
 	"github.com/gin-gonic/gin"
 )
@@ -16,13 +13,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupRouter() *gin.Engine {
-	// Connect to database
-	database.Connect()
-
 	// Set Gin mode based on environment
-	if os.Getenv("GIN_MODE") == "" {
-		gin.SetMode(gin.ReleaseMode)
-	}
+	gin.SetMode(gin.ReleaseMode)
 
 	// Create Gin router
 	router := gin.Default()
@@ -46,25 +38,29 @@ func setupRouter() *gin.Engine {
 		c.Next()
 	})
 
-	// Public routes
-	router.POST("/users", handlers.CreateUser)
-	router.GET("/users", handlers.GetUsers)
-	router.POST("/users/login", handlers.Login)
-	
-	router.POST("/items", handlers.CreateItem)
-	router.GET("/items", handlers.GetItems)
+	// Test route
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Shopping Cart Backend API",
+			"status": "running",
+			"version": "1.0.0",
+		})
+	})
 
-	// Protected routes (require authentication)
-	protected := router.Group("/")
-	protected.Use(middleware.AuthMiddleware())
-	{
-		protected.POST("/carts", handlers.CreateCart)
-		protected.GET("/carts", handlers.GetCart)
-		protected.DELETE("/carts/:itemId", handlers.RemoveFromCart)
-		
-		protected.POST("/orders", handlers.CreateOrder)
-		protected.GET("/orders", handlers.GetOrders)
-	}
+	// Simple items endpoint
+	router.GET("/items", func(c *gin.Context) {
+		items := []map[string]interface{}{
+			{"id": 1, "name": "Laptop", "description": "High-performance laptop", "price": 59999, "stock": 10},
+			{"id": 2, "name": "Smartphone", "description": "Latest smartphone", "price": 29999, "stock": 15},
+			{"id": 3, "name": "Headphones", "description": "Wireless headphones", "price": 9999, "stock": 20},
+			{"id": 4, "name": "Keyboard", "description": "Mechanical keyboard", "price": 7999, "stock": 25},
+			{"id": 5, "name": "Mouse", "description": "Wireless mouse", "price": 1999, "stock": 30},
+			{"id": 6, "name": "Monitor", "description": "4K monitor", "price": 24999, "stock": 8},
+			{"id": 7, "name": "Tablet", "description": "10-inch tablet", "price": 34999, "stock": 12},
+			{"id": 8, "name": "Webcam", "description": "HD webcam", "price": 4999, "stock": 18},
+		}
+		c.JSON(http.StatusOK, gin.H{"items": items})
+	})
 
 	return router
 }
