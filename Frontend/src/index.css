@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Toast animations */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+}
+
+.alert {
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease-in-out;
+  max-width: 400px;
+  word-wrap: break-word;
+}

@@ -1,0 +1,41 @@
+package main
+
+import (
+	"shopping-cart-backend/database"
+	"shopping-cart-backend/models"
+	"log"
+)
+
+func main() {
+	// Connect to database
+	database.Connect()
+
+	// Sample items to seed
+	items := []models.Item{
+		{Name: "Laptop", Status: "available"},
+		{Name: "Smartphone", Status: "available"},
+		{Name: "Headphones", Status: "available"},
+		{Name: "Keyboard", Status: "available"},
+		{Name: "Mouse", Status: "available"},
+		{Name: "Monitor", Status: "available"},
+		{Name: "Tablet", Status: "unavailable"},
+		{Name: "Webcam", Status: "available"},
+	}
+
+	// Create items
+	for _, item := range items {
+		var existingItem models.Item
+		if err := database.DB.Where("name = ?", item.Name).First(&existingItem).Error; err != nil {
+			// Item doesn't exist, create it
+			if err := database.DB.Create(&item).Error; err != nil {
+				log.Printf("Failed to create item %s: %v", item.Name, err)
+			} else {
+				log.Printf("Created item: %s", item.Name)
+			}
+		} else {
+			log.Printf("Item already exists: %s", item.Name)
+		}
+	}
+
+	log.Println("Seeding completed!")
+}
