@@ -41,18 +41,13 @@ const CartModal = ({ isOpen, onClose }) => {
   const processCartItems = () => {
     if (!cartData?.cart_items) return [];
     
-    // Get deleted items from localStorage
-    const deletedItems = JSON.parse(localStorage.getItem('deletedCartItems') || '[]');
-    
-    // Filter out deleted items and use cart_items directly since they now include quantities
-    return cartData.cart_items
-      .filter(cartItem => !deletedItems.includes(cartItem.item_id))
-      .map(cartItem => ({
-        ...cartItem.item,
-        quantity: cartItem.quantity,
-        cart_item_id: cartItem.id,
-        item_id: cartItem.item_id // Keep item_id for deletion
-      }));
+    // Use cart_items directly since backend now properly manages cart state
+    return cartData.cart_items.map(cartItem => ({
+      ...cartItem.item,
+      quantity: cartItem.quantity,
+      cart_item_id: cartItem.id,
+      item_id: cartItem.item_id
+    }));
   };
 
   const calculateTotal = () => {
@@ -84,14 +79,7 @@ const CartModal = ({ isOpen, onClose }) => {
       await cartAPI.removeItem(itemId);
       toast.success('Item removed from cart! 🗑️');
       
-      // Store deleted items in localStorage for demo persistence
-      const deletedItems = JSON.parse(localStorage.getItem('deletedCartItems') || '[]');
-      if (!deletedItems.includes(itemId)) {
-        deletedItems.push(itemId);
-        localStorage.setItem('deletedCartItems', JSON.stringify(deletedItems));
-      }
-      
-      // Refresh cart data
+      // Refresh cart data (backend now properly manages state)
       await fetchCartData();
     } catch (error) {
       console.error('Error removing item from cart:', error);

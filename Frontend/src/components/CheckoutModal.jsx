@@ -35,16 +35,11 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
   const processCartItems = () => {
     if (!cartData?.cart_items) return [];
     
-    // Get deleted items from localStorage
-    const deletedItems = JSON.parse(localStorage.getItem('deletedCartItems') || '[]');
-    
-    // Filter out deleted items and use cart_items directly since they now include quantities
-    return cartData.cart_items
-      .filter(cartItem => !deletedItems.includes(cartItem.item_id))
-      .map(cartItem => ({
-        ...cartItem.item,
-        quantity: cartItem.quantity
-      }));
+    // Use cart_items directly since backend now properly manages cart state
+    return cartData.cart_items.map(cartItem => ({
+      ...cartItem.item,
+      quantity: cartItem.quantity
+    }));
   };
 
   const calculateTotal = () => {
@@ -80,8 +75,6 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       await ordersAPI.create();
       toast.success('Order placed successfully! 🎉');
-      // Clear deleted items after successful checkout
-      localStorage.removeItem('deletedCartItems');
       onSuccess?.();
       onClose();
     } catch (error) {

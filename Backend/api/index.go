@@ -9,12 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// In-memory storage for serverless
+// In-memory storage for serverless - using session-based storage
 var (
 	users    []map[string]interface{}
 	carts    map[int][]map[string]interface{}
 	orders   []map[string]interface{}
 	nextID   int = 1
+	// Simple session storage to persist cart between requests
+	sessionCart []map[string]interface{}
 )
 
 // Handler is the main entry point for Vercel
@@ -145,11 +147,9 @@ func setupRouter() *gin.Engine {
 			return
 		}
 		
-		userID := 1 // Simplified
-		
-		// Initialize cart if it doesn't exist
-		if carts[userID] == nil {
-			carts[userID] = []map[string]interface{}{}
+		// Initialize session cart if it doesn't exist
+		if sessionCart == nil {
+			sessionCart = []map[string]interface{}{}
 		}
 		
 		// Find item details
@@ -176,95 +176,53 @@ func setupRouter() *gin.Engine {
 			return
 		}
 		
-		// Check if item already in cart
-		for i, cartItem := range carts[userID] {
+		// Check if item already in session cart
+		found := false
+		for i, cartItem := range sessionCart {
 			if int(cartItem["item_id"].(int)) == req.ItemID {
 				// Update quantity
-				carts[userID][i]["quantity"] = carts[userID][i]["quantity"].(int) + 1
-				c.JSON(http.StatusOK, gin.H{"message": "Item quantity updated in cart"})
-				return
+				sessionCart[i]["quantity"] = sessionCart[i]["quantity"].(int) + 1
+				c.JSON(http.StatusOK, gin.H{
+					"message": "Item quantity updated in cart",
+					"item_name": item["name"],
+					"new_quantity": sessionCart[i]["quantity"],
+				})
+				found = true
+				break
 			}
 		}
 		
-		// Add new item to cart (Note: In serverless, this won't persist between requests)
-		cartItem := map[string]interface{}{
-			"id":         nextID,
-			"item_id":    req.ItemID,
-			"quantity":   1,
-			"item":       item,
-			"created_at": time.Now().Format(time.RFC3339),
+		if !found {
+			// Add new item to session cart
+			cartItem := map[string]interface{}{
+				"id":         nextID,
+				"item_id":    req.ItemID,
+				"quantity":   1,
+				"item":       item,
+				"created_at": time.Now().Format(time.RFC3339),
+			}
+			nextID++
+			sessionCart = append(sessionCart, cartItem)
+			
+			c.JSON(http.StatusCreated, gin.H{
+				"message": "Item added to cart successfully",
+				"item_name": item["name"],
+				"cart_item_id": cartItem["id"],
+			})
 		}
-		nextID++
-		carts[userID] = append(carts[userID], cartItem)
-		
-		c.JSON(http.StatusCreated, gin.H{
-			"message": "Item added to cart successfully",
-			"note": "In serverless demo mode - cart data is simulated",
-			"item_name": item["name"],
-			"cart_item_id": cartItem["id"],
-		})
 	})
 
 	router.GET("/carts", func(c *gin.Context) {
-		userID := 1 // Simplified
-		
-		// Check if we have a deletion marker in query params
-		deletedItemId := c.Query("deleted_item_id")
-		
-		// Sample cart data
-		sampleCart := []map[string]interface{}{
-			{
-				"id":         1,
-				"item_id":    1,
-				"quantity":   2,
-				"item": map[string]interface{}{
-					"id": 1, 
-					"name": "Laptop", 
-					"description": "High-performance laptop", 
-					"price": 59999, 
-					"status": "available",
-					"created_at": time.Now().AddDate(0, 0, -30).Format(time.RFC3339),
-				},
-				"created_at": time.Now().AddDate(0, 0, -1).Format(time.RFC3339),
-			},
-			{
-				"id":         2,
-				"item_id":    3,
-				"quantity":   1,
-				"item": map[string]interface{}{
-					"id": 3, 
-					"name": "Headphones", 
-					"description": "Wireless headphones", 
-					"price": 9999, 
-					"status": "available",
-					"created_at": time.Now().AddDate(0, 0, -20).Format(time.RFC3339),
-				},
-				"created_at": time.Now().AddDate(0, 0, -2).Format(time.RFC3339),
-			},
-		}
-		
-		// Filter out deleted item if specified
-		if deletedItemId != "" {
-			filteredCart := []map[string]interface{}{}
-			for _, item := range sampleCart {
-				if strconv.Itoa(int(item["item_id"].(int))) != deletedItemId {
-					filteredCart = append(filteredCart, item)
-				}
-			}
-			sampleCart = filteredCart
-		}
-		
-		// In serverless, try to use actual cart data first, fallback to sample
-		userCart := carts[userID]
-		if userCart == nil || len(userCart) == 0 {
-			userCart = sampleCart
+		// Return the session cart directly for consistent demo experience
+		if sessionCart == nil {
+			sessionCart = []map[string]interface{}{}
 		}
 		
 		// Return cart in expected format
 		c.JSON(http.StatusOK, gin.H{
-			"id":         userID,
-			"user_id":    userID,
-			"cart_items": userCart,
+			"id":         1,
+			"user_id":    1,
+			"cart_items": sessionCart,
 		})
 	})
 
@@ -276,23 +234,63 @@ func setupRouter() *gin.Engine {
 			return
 		}
 		
-		// In serverless demo mode, just return success
-		// Real implementation would use persistent storage
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Item removed from cart successfully",
-			"note": "In serverless demo mode - using simulated cart data",
-			"item_id": itemID,
-		})
+		// Find and remove item from session cart
+		if sessionCart == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Cart is empty"})
+			return
+		}
+		
+		for i, cartItem := range sessionCart {
+			if int(cartItem["item_id"].(int)) == itemID {
+				// Remove item from session cart
+				sessionCart = append(sessionCart[:i], sessionCart[i+1:]...)
+				c.JSON(http.StatusOK, gin.H{
+					"message": "Item removed from cart successfully",
+					"item_id": itemID,
+				})
+				return
+			}
+		}
+		
+		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found in cart"})
 	})
 
 	// Order endpoints
 	router.POST("/orders", func(c *gin.Context) {
-		// In serverless demo mode, simulate order creation
+		// Check if there are items in session cart
+		if sessionCart == nil || len(sessionCart) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Cart is empty"})
+			return
+		}
+		
+		// Calculate total from session cart
+		total := 0
+		for _, cartItem := range sessionCart {
+			item := cartItem["item"].(map[string]interface{})
+			price := int(item["price"].(int))
+			quantity := int(cartItem["quantity"].(int))
+			total += price * quantity
+		}
+		
+		// Create order with session cart items
+		order := map[string]interface{}{
+			"id":         nextID,
+			"user_id":    1,
+			"total":      total,
+			"items":      sessionCart,
+			"created_at": time.Now().Format(time.RFC3339),
+		}
+		nextID++
+		
+		orders = append(orders, order)
+		
+		// Clear session cart after order
+		sessionCart = []map[string]interface{}{}
+		
 		c.JSON(http.StatusCreated, gin.H{
 			"message": "Order placed successfully",
-			"order_id": nextID,
-			"total": 139998, // Sample total for demo cart
-			"note": "In serverless demo mode - using simulated data",
+			"order_id": order["id"],
+			"total": total,
 		})
 	})
 
@@ -345,5 +343,6 @@ func initData() {
 	}
 	carts = make(map[int][]map[string]interface{})
 	orders = []map[string]interface{}{}
+	sessionCart = []map[string]interface{}{}
 	nextID = 2
 }
