@@ -3,8 +3,18 @@ package handler
 import (
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 	
 	"github.com/gin-gonic/gin"
+)
+
+// In-memory storage for serverless
+var (
+	users    []map[string]interface{}
+	carts    map[int][]map[string]interface{}
+	orders   []map[string]interface{}
+	nextID   int = 1
 )
 
 // Handler is the main entry point for Vercel
@@ -13,6 +23,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupRouter() *gin.Engine {
+	// Initialize data
+	initData()
+	
 	// Set Gin mode based on environment
 	gin.SetMode(gin.ReleaseMode)
 
@@ -253,4 +266,14 @@ func setupRouter() *gin.Engine {
 	})
 
 	return router
+}
+
+func initData() {
+	// Initialize in-memory data
+	users = []map[string]interface{}{
+		{"id": 1, "username": "testuser", "password": "password"},
+	}
+	carts = make(map[int][]map[string]interface{})
+	orders = []map[string]interface{}{}
+	nextID = 2
 }
