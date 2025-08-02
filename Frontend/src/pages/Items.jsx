@@ -34,23 +34,35 @@ const Items = ({ setIsAuthenticated }) => {
   const handleAddToCart = async (itemId) => {
     setAddingItemId(itemId);
     try {
-      // Try to get existing cart to check for duplicates
-      let existingItem = null;
-      try {
-        const cartData = await cartAPI.get();
-        existingItem = cartData.cart_items?.find(cartItem => cartItem.item_id === itemId);
-      } catch (error) {
-        // No cart exists yet, which is fine - we'll create one
-        console.log('No existing cart found, will create new one');
-      }
-      
+      // Add to backend
       await cartAPI.addItem(itemId);
       
-      if (existingItem) {
+      // Also add to localStorage for immediate UI feedback
+      const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const itemExists = currentCart.find(item => item.item_id === itemId);
+      
+      if (itemExists) {
+        // Increment quantity
+        itemExists.quantity += 1;
         toast.success('Item quantity increased in cart! 🔢');
       } else {
-        toast.success('Item added to cart successfully! ✅');
+        // Add new item
+        const itemData = items.find(item => item.id === itemId);
+        if (itemData) {
+          currentCart.push({
+            id: Date.now(), // Temporary ID
+            item_id: itemId,
+            quantity: 1,
+            item: itemData,
+            created_at: new Date().toISOString()
+          });
+          toast.success('Item added to cart successfully! ✅');
+        }
       }
+      
+      // Save updated cart to localStorage
+      localStorage.setItem('cart', JSON.stringify(currentCart));
+      
     } catch (error) {
       console.error('Error adding item to cart:', error);
       toast.error('Error adding item to cart');

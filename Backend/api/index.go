@@ -213,16 +213,83 @@ func setupRouter() *gin.Engine {
 	})
 
 	router.GET("/carts", func(c *gin.Context) {
-		// Return the session cart directly for consistent demo experience
-		if sessionCart == nil {
-			sessionCart = []map[string]interface{}{}
+		// For serverless demo, return a simulated cart with recently added items
+		// In a real app, this would query a database
+		
+		// Check if there's an "added_item" query parameter for demo simulation
+		addedItemId := c.Query("added_item")
+		
+		// Base demo cart items
+		demoCart := []map[string]interface{}{}
+		
+		// If an item was "added", include it in the demo cart
+		if addedItemId != "" {
+			itemId, _ := strconv.Atoi(addedItemId)
+			
+			// Find the item details
+			items := []map[string]interface{}{
+				{"id": 1, "name": "Laptop", "description": "High-performance laptop", "price": 59999, "stock": 10, "status": "available", "created_at": time.Now().AddDate(0, 0, -30).Format(time.RFC3339)},
+				{"id": 2, "name": "Smartphone", "description": "Latest smartphone", "price": 29999, "stock": 15, "status": "available", "created_at": time.Now().AddDate(0, 0, -25).Format(time.RFC3339)},
+				{"id": 3, "name": "Headphones", "description": "Wireless headphones", "price": 9999, "stock": 20, "status": "available", "created_at": time.Now().AddDate(0, 0, -20).Format(time.RFC3339)},
+				{"id": 4, "name": "Keyboard", "description": "Mechanical keyboard", "price": 7999, "stock": 25, "status": "available", "created_at": time.Now().AddDate(0, 0, -15).Format(time.RFC3339)},
+				{"id": 5, "name": "Mouse", "description": "Wireless mouse", "price": 1999, "stock": 30, "status": "available", "created_at": time.Now().AddDate(0, 0, -10).Format(time.RFC3339)},
+				{"id": 6, "name": "Monitor", "description": "4K monitor", "price": 24999, "stock": 8, "status": "available", "created_at": time.Now().AddDate(0, 0, -5).Format(time.RFC3339)},
+				{"id": 7, "name": "Tablet", "description": "10-inch tablet", "price": 34999, "stock": 12, "status": "available", "created_at": time.Now().AddDate(0, 0, -3).Format(time.RFC3339)},
+				{"id": 8, "name": "Webcam", "description": "HD webcam", "price": 4999, "stock": 18, "status": "available", "created_at": time.Now().AddDate(0, 0, -1).Format(time.RFC3339)},
+			}
+			
+			for _, item := range items {
+				if int(item["id"].(int)) == itemId {
+					cartItem := map[string]interface{}{
+						"id":         1,
+						"item_id":    itemId,
+						"quantity":   1,
+						"item":       item,
+						"created_at": time.Now().Format(time.RFC3339),
+					}
+					demoCart = append(demoCart, cartItem)
+					break
+				}
+			}
+		} else {
+			// Default demo cart with a couple of items for demonstration
+			demoCart = []map[string]interface{}{
+				{
+					"id":         1,
+					"item_id":    1,
+					"quantity":   2,
+					"item": map[string]interface{}{
+						"id": 1, 
+						"name": "Laptop", 
+						"description": "High-performance laptop", 
+						"price": 59999, 
+						"status": "available",
+						"created_at": time.Now().AddDate(0, 0, -30).Format(time.RFC3339),
+					},
+					"created_at": time.Now().AddDate(0, 0, -1).Format(time.RFC3339),
+				},
+				{
+					"id":         2,
+					"item_id":    3,
+					"quantity":   1,
+					"item": map[string]interface{}{
+						"id": 3, 
+						"name": "Headphones", 
+						"description": "Wireless headphones", 
+						"price": 9999, 
+						"status": "available",
+						"created_at": time.Now().AddDate(0, 0, -20).Format(time.RFC3339),
+					},
+					"created_at": time.Now().AddDate(0, 0, -2).Format(time.RFC3339),
+				},
+			}
 		}
 		
 		// Return cart in expected format
 		c.JSON(http.StatusOK, gin.H{
 			"id":         1,
 			"user_id":    1,
-			"cart_items": sessionCart,
+			"cart_items": demoCart,
 		})
 	})
 

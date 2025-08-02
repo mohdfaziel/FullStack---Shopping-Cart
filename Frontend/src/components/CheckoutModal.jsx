@@ -16,17 +16,25 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
   const fetchCartData = async () => {
     setIsLoading(true);
     try {
-      const data = await cartAPI.get();
-      setCartData(data);
+      // First try to get from localStorage
+      const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+      
+      if (localCart.length > 0) {
+        // Show localStorage data immediately
+        setCartData({ cart_items: localCart });
+      } else {
+        // Try to get from backend if no local data
+        try {
+          const data = await cartAPI.get();
+          setCartData(data);
+        } catch (error) {
+          console.error('Error fetching cart from backend:', error);
+          setCartData({ cart_items: [] });
+        }
+      }
     } catch (error) {
       console.error('Error fetching cart:', error);
-      // If it's a 404 (no cart found), set empty cart structure
-      if (error.message.includes('404')) {
-        setCartData({ cart_items: [] });
-      } else {
-        // For other errors, set null to show error message
-        setCartData(null);
-      }
+      setCartData({ cart_items: [] });
     } finally {
       setIsLoading(false);
     }
@@ -35,10 +43,14 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
   const processCartItems = () => {
     if (!cartData?.cart_items) return [];
     
-    // Use cart_items directly since backend now properly manages cart state
+    // Process cart items from either localStorage or backend
     return cartData.cart_items.map(cartItem => ({
-      ...cartItem.item,
-      quantity: cartItem.quantity
+      id: cartItem.item?.id || cartItem.item_id,
+      name: cartItem.item?.name || 'Unknown Item',
+      description: cartItem.item?.description || '',
+      price: cartItem.item?.price || 0,
+      quantity: cartItem.quantity,
+      item_id: cartItem.item_id
     }));
   };
 
@@ -74,6 +86,10 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
     setIsProcessing(true);
     try {
       await ordersAPI.create();
+      
+      // Clear localStorage cart after successful checkout
+      localStorage.removeItem('cart');
+      
       toast.success('Order placed successfully! 🎉');
       onSuccess?.();
       onClose();

@@ -22,17 +22,26 @@ const CartModal = ({ isOpen, onClose }) => {
   const fetchCartData = async () => {
     setIsLoading(true);
     try {
-      const data = await cartAPI.get();
-      setCartData(data);
+      // First try to get from localStorage for immediate display
+      const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+      
+      if (localCart.length > 0) {
+        // Show localStorage data immediately
+        setCartData({ cart_items: localCart });
+      } else {
+        // Try to get from backend if no local data
+        try {
+          const data = await cartAPI.get();
+          setCartData(data);
+        } catch (error) {
+          console.error('Error fetching cart from backend:', error);
+          // Set empty cart if backend fails
+          setCartData({ cart_items: [] });
+        }
+      }
     } catch (error) {
       console.error('Error fetching cart:', error);
-      // If it's a 404 (no cart found), set empty cart structure
-      if (error.message.includes('404')) {
-        setCartData({ cart_items: [] });
-      } else {
-        // For other errors, set null to show error message
-        setCartData(null);
-      }
+      setCartData({ cart_items: [] });
     } finally {
       setIsLoading(false);
     }
@@ -41,12 +50,16 @@ const CartModal = ({ isOpen, onClose }) => {
   const processCartItems = () => {
     if (!cartData?.cart_items) return [];
     
-    // Use cart_items directly since backend now properly manages cart state
+    // Process cart items from either localStorage or backend
     return cartData.cart_items.map(cartItem => ({
-      ...cartItem.item,
+      id: cartItem.item?.id || cartItem.item_id,
+      name: cartItem.item?.name || 'Unknown Item',
+      description: cartItem.item?.description || '',
+      price: cartItem.item?.price || 0,
       quantity: cartItem.quantity,
       cart_item_id: cartItem.id,
-      item_id: cartItem.item_id
+      item_id: cartItem.item_id,
+      created_at: cartItem.created_at || cartItem.item?.created_at
     }));
   };
 
@@ -76,10 +89,21 @@ const CartModal = ({ isOpen, onClose }) => {
   const handleDeleteItem = async (itemId) => {
     setDeletingItemId(itemId);
     try {
-      await cartAPI.removeItem(itemId);
+      // Remove from localStorage immediately
+      const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const updatedCart = currentCart.filter(item => item.item_id !== itemId);
+      localStorage.setItem('cart', JSON.stringify(updatedCart));
+      
+      // Also try to remove from backend
+      try {
+        await cartAPI.removeItem(itemId);
+      } catch (error) {
+        console.log('Backend removal failed, but local removal successful');
+      }
+      
       toast.success('Item removed from cart! 🗑️');
       
-      // Refresh cart data (backend now properly manages state)
+      // Refresh cart data
       await fetchCartData();
     } catch (error) {
       console.error('Error removing item from cart:', error);
