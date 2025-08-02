@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"net/http"
@@ -67,15 +67,4 @@ func setupRouter() *gin.Engine {
 	}
 
 	return router
-}
-
-func main() {
-	// This main function is for local development
-	router := setupRouter()
-	
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8081"
-	}
-	router.Run(":" + port)
 }
