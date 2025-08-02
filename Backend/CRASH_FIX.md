@@ -68,6 +68,12 @@ Set this environment variable in your frontend Vercel project:
 VITE_API_BASE_URL=https://full-stack-shopping-cart-backend.vercel.app
 ```
 
+### **4. Update Backend CORS (Security)**
+Set this environment variable in your backend Vercel project:
+```bash
+ALLOWED_ORIGINS=https://full-stack-shopping-cart.vercel.app
+```
+
 ## 🔄 **FULL RESTORATION PLAN:**
 
 To restore full functionality (auth, cart, orders), we have two options:

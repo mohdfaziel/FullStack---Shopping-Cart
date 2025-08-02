@@ -22,7 +22,7 @@ func setupRouter() *gin.Engine {
 	// CORS middleware with environment-based origin
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 	if allowedOrigins == "" {
-		allowedOrigins = "*"
+		allowedOrigins = "https://full-stack-shopping-cart.vercel.app"
 	}
 
 	router.Use(func(c *gin.Context) {
