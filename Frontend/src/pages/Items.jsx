@@ -34,38 +34,18 @@ const Items = ({ setIsAuthenticated }) => {
   const handleAddToCart = async (itemId) => {
     setAddingItemId(itemId);
     try {
+      console.log('🔍 Items: Adding item to cart:', itemId);
       // Add to backend first
       await cartAPI.addItem(itemId);
       
+      console.log('🔍 Items: Item successfully added to backend cart');
       toast.success('Item added to cart successfully! ✅');
       
-      // Optionally update localStorage for immediate UI feedback
-      // But prioritize backend as source of truth
-      const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
-      const itemExists = currentCart.find(item => item.item_id === itemId);
-      
-      if (itemExists) {
-        // Increment quantity
-        itemExists.quantity += 1;
-      } else {
-        // Add new item
-        const itemData = items.find(item => item.id === itemId);
-        if (itemData) {
-          currentCart.push({
-            id: Date.now(), // Temporary ID
-            item_id: itemId,
-            quantity: 1,
-            item: itemData,
-            created_at: new Date().toISOString()
-          });
-        }
-      }
-      
-      // Save updated cart to localStorage
-      localStorage.setItem('cart', JSON.stringify(currentCart));
+      // Don't update localStorage here - let the CartModal fetch from backend
+      // This ensures consistency
       
     } catch (error) {
-      console.error('Error adding item to cart:', error);
+      console.error('🔍 Items: Error adding item to cart:', error);
       toast.error('Failed to add item to cart. Please try again.');
     } finally {
       setAddingItemId(null);

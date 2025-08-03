@@ -97,9 +97,13 @@ export const ordersAPI = {
 // Authentication helpers
 export const auth = {
   setToken: (token) => {
+    // First, completely clear any existing data
+    localStorage.clear();
+    
+    // Then set the new token
     localStorage.setItem('token', token);
-    // Clear any previous cart data when setting new token (new user session)
-    auth.clearUserData();
+    
+    console.log('🔍 Auth: Token set and all localStorage cleared');
   },
   getToken,
   removeToken: () => {
@@ -112,5 +116,13 @@ export const auth = {
     // Clear all user-specific localStorage data
     localStorage.removeItem('cart');
     localStorage.removeItem('deletedCartItems');
+    
+    // Debug: Log what we're clearing
+    console.log('🔍 Auth: Cleared localStorage cart data');
+  },
+  // Debug function to force clear all localStorage
+  debugClearAll: () => {
+    localStorage.clear();
+    console.log('🔍 Auth: DEBUG - Cleared ALL localStorage data');
   }
 };

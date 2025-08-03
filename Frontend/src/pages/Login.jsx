@@ -24,9 +24,12 @@ const Login = ({ setIsAuthenticated }) => {
     setIsLoading(true);
 
     try {
+      console.log('🔍 Login: Attempting to login with:', formData.username);
       const response = await authAPI.login(formData);
+      console.log('🔍 Login: Login successful, response:', response);
       
       // Store token (this will automatically clear previous user's cart data)
+      console.log('🔍 Login: Setting token and clearing previous cart data');
       auth.setToken(response.token);
       
       // Update authentication state
@@ -38,6 +41,7 @@ const Login = ({ setIsAuthenticated }) => {
       // Navigate to items page
       navigate('/items');
     } catch (error) {
+      console.error('🔍 Login: Login failed:', error);
       // Show error toast as specified in requirements
       toast.error('Invalid username/password');
     } finally {

@@ -15,36 +15,33 @@ const CartModal = ({ isOpen, onClose }) => {
 
   const fetchCartData = async () => {
     setIsLoading(true);
+    console.log('🔍 CartModal: Starting fetchCartData');
+    
     try {
-      // Always try to get from backend first for authenticated users
-      try {
-        const data = await cartAPI.get();
-        setCartData(data);
-        
-        // Sync backend data to localStorage
-        if (data?.cart_items) {
-          localStorage.setItem('cart', JSON.stringify(data.cart_items));
-        } else {
-          localStorage.removeItem('cart');
-        }
-      } catch (error) {
-        console.error('Error fetching cart from backend:', error);
-        
-        // Only fall back to localStorage if backend completely fails
-        const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        if (localCart.length > 0) {
-          console.log('Using localStorage fallback');
-          setCartData({ cart_items: localCart });
-        } else {
-          // Set empty cart if both fail
-          setCartData({ cart_items: [] });
-        }
+      // ALWAYS get from backend ONLY - no localStorage fallback
+      console.log('🔍 CartModal: Fetching ONLY from backend');
+      const data = await cartAPI.get();
+      console.log('🔍 CartModal: Backend response:', data);
+      setCartData(data);
+      
+      // Sync backend data to localStorage for caching only
+      if (data?.cart_items && data.cart_items.length > 0) {
+        console.log('🔍 CartModal: Caching backend cart_items to localStorage:', data.cart_items);
+        localStorage.setItem('cart', JSON.stringify(data.cart_items));
+      } else {
+        console.log('🔍 CartModal: No cart_items in backend, clearing localStorage cache');
+        localStorage.removeItem('cart');
+        // Ensure we have an empty cart_items array
+        setCartData({ ...data, cart_items: [] });
       }
     } catch (error) {
-      console.error('Error fetching cart:', error);
+      console.error('🔍 CartModal: Backend error - setting empty cart:', error);
+      // If backend fails, show empty cart (no localStorage fallback)
       setCartData({ cart_items: [] });
+      localStorage.removeItem('cart');
     } finally {
       setIsLoading(false);
+      console.log('🔍 CartModal: fetchCartData completed');
     }
   };
 
