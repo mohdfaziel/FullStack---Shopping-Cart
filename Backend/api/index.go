@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -11,12 +12,13 @@ import (
 
 // In-memory storage for serverless - using session-based storage
 var (
-	users  []map[string]interface{}
-	carts  map[int][]map[string]interface{}
-	orders []map[string]interface{}
-	nextID int = 1
-	// Simple session storage to persist cart between requests
+	users       []map[string]interface{}
+	carts       map[int][]map[string]interface{}
+	orders      []map[string]interface{}
+	nextID      int = 1
 	sessionCart []map[string]interface{}
+	// Flag to prevent re-initialization
+	initialized bool = false
 )
 
 // Handler is the main entry point for Vercel
@@ -383,6 +385,12 @@ func setupRouter() *gin.Engine {
 }
 
 func initData() {
+	// Only initialize once to prevent data loss in serverless
+	if initialized {
+		log.Println("[INIT] Skipping re-initialization to preserve cart data")
+		return
+	}
+
 	// Initialize in-memory data
 	users = []map[string]interface{}{
 		{"id": 1, "username": "testuser", "password": "password"},
@@ -391,6 +399,8 @@ func initData() {
 	orders = []map[string]interface{}{}
 	sessionCart = []map[string]interface{}{}
 	nextID = 2
+	initialized = true
+	log.Println("[INIT] Data initialized successfully - cart is empty")
 }
 
 // Helper function to clear session cart (useful for testing)
