@@ -113,7 +113,7 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box max-w-2xl">
+      <div className="modal-box max-w-2xl overflow-x-hidden">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-lg">💳 Checkout</h3>
           <button 

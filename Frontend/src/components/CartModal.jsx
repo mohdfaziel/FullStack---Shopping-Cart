@@ -128,13 +128,6 @@ const CartModal = ({ isOpen, onClose }) => {
           </div>
         ) : cartData ? (
           <div>
-            <div className="mb-4">
-              <div className="stat">
-                <div className="stat-title">Cart ID</div>
-                <div className="stat-value text-primary text-lg">{cartData.id}</div>
-              </div>
-            </div>
-
             {cartData.cart_items && cartData.cart_items.length > 0 ? (
               <div>
                 <h4 className="font-semibold mb-3">Items in Cart:</h4>
@@ -145,9 +138,6 @@ const CartModal = ({ isOpen, onClose }) => {
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <h5 className="font-medium">{item.name}</h5>
-                            <p className="text-sm text-base-content/70">
-                              Status: <span className="badge badge-success badge-sm">{item.status}</span>
-                            </p>
                             <p className="text-sm text-base-content/70">
                               Quantity: <span className="badge badge-info badge-sm">{item.quantity}</span>
                             </p>
