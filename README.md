@@ -1,5 +1,6 @@
 # Shopping Cart E-commerce Project
 
+**Developer:** Mohd Faziel  
 A full-stack e-commerce application built with **Golang (Gin)** backend and **React.js** frontend using **daisyUI** and **TailwindCSS**.
 
 ## 🏗️ Project Structure

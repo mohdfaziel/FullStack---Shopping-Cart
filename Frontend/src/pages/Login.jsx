@@ -124,6 +124,13 @@ const Login = ({ setIsAuthenticated }) => {
               </button>
             </div>
           </form>
+          
+          {/* Developer signature */}
+          <div className="text-center mt-6 pt-4 border-t border-base-300">
+            <p className="text-sm text-base-content/60">
+              Developed by <span className="font-semibold text-primary">Mohd Faziel</span>
+            </p>
+          </div>
         </div>
       </div>
     </div>
