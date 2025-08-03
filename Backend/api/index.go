@@ -287,12 +287,16 @@ func setupRouter() *gin.Engine {
 			total += price * quantity
 		}
 
-		// Create order with session cart items
+		// Create order with session cart items in the format expected by frontend
 		order := map[string]interface{}{
-			"id":         nextID,
-			"user_id":    1,
-			"total":      total,
-			"items":      sessionCart,
+			"id":      nextID,
+			"user_id": 1,
+			"total":   total,
+			"status":  "completed",
+			"cart": map[string]interface{}{
+				"cart_items": sessionCart,
+			},
+			"cart_id":    1,
 			"created_at": time.Now().Format(time.RFC3339),
 		}
 		nextID++
@@ -302,6 +306,8 @@ func setupRouter() *gin.Engine {
 		// Clear session cart after order
 		sessionCart = []map[string]interface{}{}
 
+		log.Printf("[CREATE ORDER] Order %d created with total %d. Orders array now has %d orders", order["id"], total, len(orders))
+
 		c.JSON(http.StatusCreated, gin.H{
 			"message":  "Order placed successfully",
 			"order_id": order["id"],
@@ -310,42 +316,14 @@ func setupRouter() *gin.Engine {
 	})
 
 	router.GET("/orders", func(c *gin.Context) {
-		// Return sample order data for demonstration
-		sampleOrders := []map[string]interface{}{
-			{
-				"id":         1,
-				"user_id":    1,
-				"total":      139998,
-				"created_at": time.Now().AddDate(0, 0, -2).Format(time.RFC3339),
-				"cart_id":    1,
-				"cart": map[string]interface{}{
-					"cart_items": []map[string]interface{}{
-						{
-							"id":       1,
-							"item_id":  1,
-							"quantity": 2,
-							"item": map[string]interface{}{
-								"id":    1,
-								"name":  "Laptop",
-								"price": 59999,
-							},
-						},
-						{
-							"id":       2,
-							"item_id":  3,
-							"quantity": 1,
-							"item": map[string]interface{}{
-								"id":    3,
-								"name":  "Headphones",
-								"price": 9999,
-							},
-						},
-					},
-				},
-			},
+		// Return actual orders from the orders array
+		if orders == nil {
+			orders = []map[string]interface{}{}
 		}
 
-		c.JSON(http.StatusOK, sampleOrders)
+		log.Printf("[GET /orders] Returning %d actual orders", len(orders))
+		
+		c.JSON(http.StatusOK, orders)
 	})
 
 	return router
