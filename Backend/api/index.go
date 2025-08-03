@@ -208,7 +208,7 @@ func setupRouter() *gin.Engine {
 			sessionCart = append(sessionCart, cartItem)
 
 			log.Printf("[ADD TO CART] Added new item %d (%s) to cart. Cart now has %d items", req.ItemID, item["name"], len(sessionCart))
-			
+
 			c.JSON(http.StatusCreated, gin.H{
 				"message":      "Item added to cart successfully",
 				"item_name":    item["name"],
@@ -224,7 +224,7 @@ func setupRouter() *gin.Engine {
 		}
 
 		log.Printf("[GET /carts] Returning session cart with %d items", len(sessionCart))
-		
+
 		// Return cart in expected format
 		c.JSON(http.StatusOK, gin.H{
 			"id":         1,
