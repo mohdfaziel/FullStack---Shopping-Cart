@@ -5,16 +5,16 @@ import (
 	"os"
 	"strconv"
 	"time"
-	
+
 	"github.com/gin-gonic/gin"
 )
 
 // In-memory storage for serverless - using session-based storage
 var (
-	users    []map[string]interface{}
-	carts    map[int][]map[string]interface{}
-	orders   []map[string]interface{}
-	nextID   int = 1
+	users  []map[string]interface{}
+	carts  map[int][]map[string]interface{}
+	orders []map[string]interface{}
+	nextID int = 1
 	// Simple session storage to persist cart between requests
 	sessionCart []map[string]interface{}
 )
@@ -27,7 +27,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 func setupRouter() *gin.Engine {
 	// Initialize data
 	initData()
-	
+
 	// Set Gin mode based on environment
 	gin.SetMode(gin.ReleaseMode)
 
@@ -44,12 +44,12 @@ func setupRouter() *gin.Engine {
 		c.Header("Access-Control-Allow-Origin", allowedOrigins)
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-		
+
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
-		
+
 		c.Next()
 	})
 
@@ -57,7 +57,7 @@ func setupRouter() *gin.Engine {
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Shopping Cart Backend API",
-			"status": "running",
+			"status":  "running",
 			"version": "1.0.0",
 		})
 	})
@@ -68,18 +68,18 @@ func setupRouter() *gin.Engine {
 			Username string `json:"username"`
 			Password string `json:"password"`
 		}
-		
+
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		
+
 		// Simple validation
 		if req.Username == "" || req.Password == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Username and password are required"})
 			return
 		}
-		
+
 		// In a real app, you'd hash the password and save to database
 		// For demo purposes, just return success
 		c.JSON(http.StatusCreated, gin.H{
@@ -93,16 +93,16 @@ func setupRouter() *gin.Engine {
 			Username string `json:"username"`
 			Password string `json:"password"`
 		}
-		
+
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		
+
 		// Simple demo authentication - accept any non-empty username/password
 		if req.Username != "" && req.Password != "" {
 			c.JSON(http.StatusOK, gin.H{
-				"token": "demo-jwt-token-12345",
+				"token":   "demo-jwt-token-12345",
 				"user_id": 1,
 				"message": "Login successful",
 			})
@@ -141,17 +141,17 @@ func setupRouter() *gin.Engine {
 			ItemID   int `json:"item_id"`
 			Quantity int `json:"quantity"`
 		}
-		
+
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		
+
 		// Initialize session cart if it doesn't exist
 		if sessionCart == nil {
 			sessionCart = []map[string]interface{}{}
 		}
-		
+
 		// Find item details
 		items := []map[string]interface{}{
 			{"id": 1, "name": "Laptop", "description": "High-performance laptop", "price": 59999, "stock": 10, "status": "available", "created_at": time.Now().AddDate(0, 0, -30).Format(time.RFC3339)},
@@ -170,12 +170,12 @@ func setupRouter() *gin.Engine {
 				break
 			}
 		}
-		
+
 		if item == nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
 			return
 		}
-		
+
 		// Check if item already in session cart
 		found := false
 		for i, cartItem := range sessionCart {
@@ -183,15 +183,15 @@ func setupRouter() *gin.Engine {
 				// Update quantity
 				sessionCart[i]["quantity"] = sessionCart[i]["quantity"].(int) + 1
 				c.JSON(http.StatusOK, gin.H{
-					"message": "Item quantity updated in cart",
-					"item_name": item["name"],
+					"message":      "Item quantity updated in cart",
+					"item_name":    item["name"],
 					"new_quantity": sessionCart[i]["quantity"],
 				})
 				found = true
 				break
 			}
 		}
-		
+
 		if !found {
 			// Add new item to session cart
 			cartItem := map[string]interface{}{
@@ -203,10 +203,10 @@ func setupRouter() *gin.Engine {
 			}
 			nextID++
 			sessionCart = append(sessionCart, cartItem)
-			
+
 			c.JSON(http.StatusCreated, gin.H{
-				"message": "Item added to cart successfully",
-				"item_name": item["name"],
+				"message":      "Item added to cart successfully",
+				"item_name":    item["name"],
 				"cart_item_id": cartItem["id"],
 			})
 		}
@@ -215,17 +215,17 @@ func setupRouter() *gin.Engine {
 	router.GET("/carts", func(c *gin.Context) {
 		// For serverless demo, return a simulated cart with recently added items
 		// In a real app, this would query a database
-		
+
 		// Check if there's an "added_item" query parameter for demo simulation
 		addedItemId := c.Query("added_item")
-		
+
 		// Base demo cart items
 		demoCart := []map[string]interface{}{}
-		
+
 		// If an item was "added", include it in the demo cart
 		if addedItemId != "" {
 			itemId, _ := strconv.Atoi(addedItemId)
-			
+
 			// Find the item details
 			items := []map[string]interface{}{
 				{"id": 1, "name": "Laptop", "description": "High-performance laptop", "price": 59999, "stock": 10, "status": "available", "created_at": time.Now().AddDate(0, 0, -30).Format(time.RFC3339)},
@@ -237,7 +237,7 @@ func setupRouter() *gin.Engine {
 				{"id": 7, "name": "Tablet", "description": "10-inch tablet", "price": 34999, "stock": 12, "status": "available", "created_at": time.Now().AddDate(0, 0, -3).Format(time.RFC3339)},
 				{"id": 8, "name": "Webcam", "description": "HD webcam", "price": 4999, "stock": 18, "status": "available", "created_at": time.Now().AddDate(0, 0, -1).Format(time.RFC3339)},
 			}
-			
+
 			for _, item := range items {
 				if int(item["id"].(int)) == itemId {
 					cartItem := map[string]interface{}{
@@ -252,44 +252,23 @@ func setupRouter() *gin.Engine {
 				}
 			}
 		} else {
-			// Default demo cart with a couple of items for demonstration
-			demoCart = []map[string]interface{}{
-				{
-					"id":         1,
-					"item_id":    1,
-					"quantity":   2,
-					"item": map[string]interface{}{
-						"id": 1, 
-						"name": "Laptop", 
-						"description": "High-performance laptop", 
-						"price": 59999, 
-						"status": "available",
-						"created_at": time.Now().AddDate(0, 0, -30).Format(time.RFC3339),
-					},
-					"created_at": time.Now().AddDate(0, 0, -1).Format(time.RFC3339),
-				},
-				{
-					"id":         2,
-					"item_id":    3,
-					"quantity":   1,
-					"item": map[string]interface{}{
-						"id": 3, 
-						"name": "Headphones", 
-						"description": "Wireless headphones", 
-						"price": 9999, 
-						"status": "available",
-						"created_at": time.Now().AddDate(0, 0, -20).Format(time.RFC3339),
-					},
-					"created_at": time.Now().AddDate(0, 0, -2).Format(time.RFC3339),
-				},
-			}
+			// Start with an empty cart for new users - no demo items
+			demoCart = []map[string]interface{}{}
 		}
-		
+
 		// Return cart in expected format
 		c.JSON(http.StatusOK, gin.H{
 			"id":         1,
 			"user_id":    1,
 			"cart_items": demoCart,
+		})
+	})
+
+	// Debug endpoint to clear cart (useful for testing)
+	router.POST("/carts/clear", func(c *gin.Context) {
+		clearSessionCart()
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Cart cleared successfully",
 		})
 	})
 
@@ -300,13 +279,13 @@ func setupRouter() *gin.Engine {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item ID"})
 			return
 		}
-		
+
 		// Find and remove item from session cart
 		if sessionCart == nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Cart is empty"})
 			return
 		}
-		
+
 		for i, cartItem := range sessionCart {
 			if int(cartItem["item_id"].(int)) == itemID {
 				// Remove item from session cart
@@ -318,7 +297,7 @@ func setupRouter() *gin.Engine {
 				return
 			}
 		}
-		
+
 		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found in cart"})
 	})
 
@@ -329,7 +308,7 @@ func setupRouter() *gin.Engine {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Cart is empty"})
 			return
 		}
-		
+
 		// Calculate total from session cart
 		total := 0
 		for _, cartItem := range sessionCart {
@@ -338,7 +317,7 @@ func setupRouter() *gin.Engine {
 			quantity := int(cartItem["quantity"].(int))
 			total += price * quantity
 		}
-		
+
 		// Create order with session cart items
 		order := map[string]interface{}{
 			"id":         nextID,
@@ -348,16 +327,16 @@ func setupRouter() *gin.Engine {
 			"created_at": time.Now().Format(time.RFC3339),
 		}
 		nextID++
-		
+
 		orders = append(orders, order)
-		
+
 		// Clear session cart after order
 		sessionCart = []map[string]interface{}{}
-		
+
 		c.JSON(http.StatusCreated, gin.H{
-			"message": "Order placed successfully",
+			"message":  "Order placed successfully",
 			"order_id": order["id"],
-			"total": total,
+			"total":    total,
 		})
 	})
 
@@ -365,30 +344,30 @@ func setupRouter() *gin.Engine {
 		// Return sample order data for demonstration
 		sampleOrders := []map[string]interface{}{
 			{
-				"id": 1,
-				"user_id": 1,
-				"total": 139998,
+				"id":         1,
+				"user_id":    1,
+				"total":      139998,
 				"created_at": time.Now().AddDate(0, 0, -2).Format(time.RFC3339),
-				"cart_id": 1,
+				"cart_id":    1,
 				"cart": map[string]interface{}{
 					"cart_items": []map[string]interface{}{
 						{
-							"id": 1,
-							"item_id": 1,
+							"id":       1,
+							"item_id":  1,
 							"quantity": 2,
 							"item": map[string]interface{}{
-								"id": 1,
-								"name": "Laptop",
+								"id":    1,
+								"name":  "Laptop",
 								"price": 59999,
 							},
 						},
 						{
-							"id": 2,
-							"item_id": 3,
+							"id":       2,
+							"item_id":  3,
 							"quantity": 1,
 							"item": map[string]interface{}{
-								"id": 3,
-								"name": "Headphones",
+								"id":    3,
+								"name":  "Headphones",
 								"price": 9999,
 							},
 						},
@@ -396,7 +375,7 @@ func setupRouter() *gin.Engine {
 				},
 			},
 		}
-		
+
 		c.JSON(http.StatusOK, sampleOrders)
 	})
 
@@ -412,4 +391,9 @@ func initData() {
 	orders = []map[string]interface{}{}
 	sessionCart = []map[string]interface{}{}
 	nextID = 2
+}
+
+// Helper function to clear session cart (useful for testing)
+func clearSessionCart() {
+	sessionCart = []map[string]interface{}{}
 }
