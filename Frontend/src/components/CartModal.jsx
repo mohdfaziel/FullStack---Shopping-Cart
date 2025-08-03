@@ -13,29 +13,30 @@ const CartModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  // Add function to clear deleted items (for demo reset)
-  const clearDeletedItems = () => {
-    localStorage.removeItem('deletedCartItems');
-    fetchCartData();
-  };
-
   const fetchCartData = async () => {
     setIsLoading(true);
     try {
-      // First try to get from localStorage for immediate display
-      const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
-      
-      if (localCart.length > 0) {
-        // Show localStorage data immediately
-        setCartData({ cart_items: localCart });
-      } else {
-        // Try to get from backend if no local data
-        try {
-          const data = await cartAPI.get();
-          setCartData(data);
-        } catch (error) {
-          console.error('Error fetching cart from backend:', error);
-          // Set empty cart if backend fails
+      // Always try to get from backend first for authenticated users
+      try {
+        const data = await cartAPI.get();
+        setCartData(data);
+        
+        // Sync backend data to localStorage
+        if (data?.cart_items) {
+          localStorage.setItem('cart', JSON.stringify(data.cart_items));
+        } else {
+          localStorage.removeItem('cart');
+        }
+      } catch (error) {
+        console.error('Error fetching cart from backend:', error);
+        
+        // Only fall back to localStorage if backend completely fails
+        const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+        if (localCart.length > 0) {
+          console.log('Using localStorage fallback');
+          setCartData({ cart_items: localCart });
+        } else {
+          // Set empty cart if both fail
           setCartData({ cart_items: [] });
         }
       }
@@ -89,25 +90,21 @@ const CartModal = ({ isOpen, onClose }) => {
   const handleDeleteItem = async (itemId) => {
     setDeletingItemId(itemId);
     try {
-      // Remove from localStorage immediately
+      // Remove from backend first
+      await cartAPI.removeItem(itemId);
+      
+      // Remove from localStorage to sync
       const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
       const updatedCart = currentCart.filter(item => item.item_id !== itemId);
       localStorage.setItem('cart', JSON.stringify(updatedCart));
       
-      // Also try to remove from backend
-      try {
-        await cartAPI.removeItem(itemId);
-      } catch (error) {
-        console.log('Backend removal failed, but local removal successful');
-      }
-      
       toast.success('Item removed from cart! 🗑️');
       
-      // Refresh cart data
+      // Refresh cart data from backend
       await fetchCartData();
     } catch (error) {
       console.error('Error removing item from cart:', error);
-      toast.error('Error removing item from cart');
+      toast.error('Failed to remove item from cart. Please try again.');
     } finally {
       setDeletingItemId(null);
     }

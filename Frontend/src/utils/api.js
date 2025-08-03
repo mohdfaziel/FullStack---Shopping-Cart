@@ -21,6 +21,13 @@ const apiRequest = async (endpoint, options = {}) => {
   try {
     const response = await fetch(url, config);
     
+    // Handle authentication errors
+    if (response.status === 401 || response.status === 403) {
+      // Clear invalid token and user data
+      auth.removeToken();
+      throw new Error('Authentication failed. Please login again.');
+    }
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -89,8 +96,21 @@ export const ordersAPI = {
 
 // Authentication helpers
 export const auth = {
-  setToken: (token) => localStorage.setItem('token', token),
+  setToken: (token) => {
+    localStorage.setItem('token', token);
+    // Clear any previous cart data when setting new token (new user session)
+    auth.clearUserData();
+  },
   getToken,
-  removeToken: () => localStorage.removeItem('token'),
+  removeToken: () => {
+    localStorage.removeItem('token');
+    // Clear user-specific data when removing token
+    auth.clearUserData();
+  },
   isAuthenticated: () => !!getToken(),
+  clearUserData: () => {
+    // Clear all user-specific localStorage data
+    localStorage.removeItem('cart');
+    localStorage.removeItem('deletedCartItems');
+  }
 };

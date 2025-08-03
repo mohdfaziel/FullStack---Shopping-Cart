@@ -11,7 +11,13 @@ function App() {
 
   useEffect(() => {
     // Check authentication status on app load
-    setIsAuthenticated(auth.isAuthenticated());
+    const isAuth = auth.isAuthenticated();
+    setIsAuthenticated(isAuth);
+    
+    // If not authenticated, clear any stale user data
+    if (!isAuth) {
+      auth.clearUserData();
+    }
   }, []);
 
   // Show loading while checking auth

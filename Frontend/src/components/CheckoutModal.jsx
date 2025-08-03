@@ -16,19 +16,27 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
   const fetchCartData = async () => {
     setIsLoading(true);
     try {
-      // First try to get from localStorage
-      const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
-      
-      if (localCart.length > 0) {
-        // Show localStorage data immediately
-        setCartData({ cart_items: localCart });
-      } else {
-        // Try to get from backend if no local data
-        try {
-          const data = await cartAPI.get();
-          setCartData(data);
-        } catch (error) {
-          console.error('Error fetching cart from backend:', error);
+      // Always try to get from backend first for authenticated users
+      try {
+        const data = await cartAPI.get();
+        setCartData(data);
+        
+        // Sync backend data to localStorage
+        if (data?.cart_items) {
+          localStorage.setItem('cart', JSON.stringify(data.cart_items));
+        } else {
+          localStorage.removeItem('cart');
+        }
+      } catch (error) {
+        console.error('Error fetching cart from backend:', error);
+        
+        // Only fall back to localStorage if backend completely fails
+        const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+        if (localCart.length > 0) {
+          console.log('Using localStorage fallback for checkout');
+          setCartData({ cart_items: localCart });
+        } else {
+          // Set empty cart if both fail
           setCartData({ cart_items: [] });
         }
       }

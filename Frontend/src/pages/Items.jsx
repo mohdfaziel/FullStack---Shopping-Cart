@@ -34,17 +34,19 @@ const Items = ({ setIsAuthenticated }) => {
   const handleAddToCart = async (itemId) => {
     setAddingItemId(itemId);
     try {
-      // Add to backend
+      // Add to backend first
       await cartAPI.addItem(itemId);
       
-      // Also add to localStorage for immediate UI feedback
+      toast.success('Item added to cart successfully! ✅');
+      
+      // Optionally update localStorage for immediate UI feedback
+      // But prioritize backend as source of truth
       const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
       const itemExists = currentCart.find(item => item.item_id === itemId);
       
       if (itemExists) {
         // Increment quantity
         itemExists.quantity += 1;
-        toast.success('Item quantity increased in cart! 🔢');
       } else {
         // Add new item
         const itemData = items.find(item => item.id === itemId);
@@ -56,7 +58,6 @@ const Items = ({ setIsAuthenticated }) => {
             item: itemData,
             created_at: new Date().toISOString()
           });
-          toast.success('Item added to cart successfully! ✅');
         }
       }
       
@@ -65,7 +66,7 @@ const Items = ({ setIsAuthenticated }) => {
       
     } catch (error) {
       console.error('Error adding item to cart:', error);
-      toast.error('Error adding item to cart');
+      toast.error('Failed to add item to cart. Please try again.');
     } finally {
       setAddingItemId(null);
     }
@@ -104,6 +105,7 @@ const Items = ({ setIsAuthenticated }) => {
   };
 
   const handleLogout = () => {
+    // Clear authentication and user data (this will clear cart automatically)
     auth.removeToken();
     setIsAuthenticated(false);
     navigate('/login');

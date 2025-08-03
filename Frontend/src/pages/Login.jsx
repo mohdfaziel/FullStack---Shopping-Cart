@@ -26,7 +26,7 @@ const Login = ({ setIsAuthenticated }) => {
     try {
       const response = await authAPI.login(formData);
       
-      // Store token
+      // Store token (this will automatically clear previous user's cart data)
       auth.setToken(response.token);
       
       // Update authentication state
